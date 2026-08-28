@@ -1,23 +1,38 @@
-__pycache__/
-*.py[cod]
-.venv/
-.ruff_cache/
-.pytest_cache/
-.serena/
+# --- 벤더링된 외부 저장소 ---
+# 연구실 PC의 작업 폴더에는 이 둘이 각자 git 저장소로 들어 있다. 각각 upstream에서
+# clone해 쓰는 것이므로 이 저장소에는 넣지 않는다.
+#   openpi                 → Physical-Intelligence/openpi
+#   lerobot_robot_ufactory → xArm-Developer/lerobot_robot_ufactory
+#                            (내 수정분: sesepark/lerobot_robot_ufactory @ xarm7-gello-webxr)
+openpi/
+lerobot_robot_ufactory/
 
-# 로컬 실행 산출물 — 로봇/세션마다 달라지므로 추적하지 않는다
+# --- 수집 데이터셋 · 학습 산출물 (용량) ---
+data/
+checkpoints/
+*.deb
+
+# --- 로컬 실행 산출물 (로봇·세션마다 달라짐) ---
 runtime/
 logs/
 log/
 build/
 install/
 
-# TLS 키. WebXR 텔레옵은 실행 시 로컬 CA로 새로 발급한다
+# --- TLS 키: WebXR 텔레옵이 실행 시 로컬 CA로 새로 발급 ---
 *.key
 *.csr
 *.pem
 
-# 수집 데이터셋과 학습 체크포인트는 용량 때문에 제외한다
-data/
-checkpoints/
-*.deb
+# --- 캐시·스크래치 ---
+__pycache__/
+*.py[cod]
+.venv/
+.ruff_cache/
+.pytest_cache/
+.serena/
+node_modules/
+package.json
+package-lock.json
+test.py
+test2.py
