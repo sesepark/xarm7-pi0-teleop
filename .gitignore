@@ -36,3 +36,7 @@ package.json
 package-lock.json
 test.py
 test2.py
+
+# 맥에서 쓰던 pull 방식 백업 스크립트. 연구실 PC가 직접 푸시하므로
+# 저장소에는 넣지 않지만, 폴백으로 로컬에는 남겨 둔다.
+.sync/
