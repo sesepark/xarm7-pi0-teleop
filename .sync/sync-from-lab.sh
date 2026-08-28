@@ -22,6 +22,7 @@ git pull --ff-only -q origin main 2>/dev/null || true
 
 rsync -a --delete \
   --exclude='.git/' --exclude='.sync/' \
+  --exclude='README.md' --exclude='.gitignore' \
   --exclude='openpi/' --exclude='lerobot_robot_ufactory/' \
   --exclude='data/' --exclude='checkpoints/' --exclude='*.deb' \
   --exclude='runtime/' --exclude='logs/' --exclude='log/' \
