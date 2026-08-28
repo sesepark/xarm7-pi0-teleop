@@ -1,0 +1,9 @@
+# 텔레옵 실행 허용 상태
+#
+# 팔 관절 7개는 사용자가 실제 단일 축 시험으로 모두 +1임을 확인했습니다.
+# 그리퍼는 아직 별도 시험 전이므로 전체 텔레옵 실행은 계속 막아 둡니다.
+arm_joint_signs_verified: true
+# 2026-07-29: 사용자가 GELLO를 닫는 방향과 xArm 기본 그리퍼의 닫힘/복귀를
+# 실제 소폭 시험으로 확인했습니다.
+gripper_mapping_verified: true
+gello_mapping_verified: true

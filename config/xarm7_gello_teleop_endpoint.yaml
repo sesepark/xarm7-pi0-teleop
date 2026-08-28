@@ -1,0 +1,59 @@
+# xArm7 + GELLO 텔레옵 설정 — endpoint(TCP) 추적 모드
+#
+# 관절 추적(xarm7_gello_teleop.yaml)과 달리, GELLO 관절값을 xArm7 FK에 넣어
+# endpoint(TCP)만 추적한다. 목표 TCP는 set_position_aa(mode 7)로 스트리밍되며,
+# 실제 관절 궤적은 xArm 컨트롤러의 온라인 planning이 결정한다.
+# 시작 자세·GELLO 매핑은 관절 모드 설정과 반드시 같아야 한다.
+
+robot:
+  type: uf::robot
+  id: xarm7_pi0
+  robot_dof: 7
+  # endpoint 추적의 핵심: cartesian 제어 공간(mode 7, 온라인 Cartesian planning).
+  control_space: cartesian
+  robot_ip: "192.168.0.240"
+  gripper_type: 1  # 1 = 기본 xArm Gripper
+  start_joints: [1.7008, -27.2507, 4.6363, 61.3642, 2.0963, 88.5464, 5.9063]
+  # cartesian 모드에서도 실제 관절값 J1~J7을 관측에 포함한다(pi0 데이터 스키마 유지).
+  cartesian_obs_include_joints: true
+  # 시작 직후 3초는 20mm/s 저속 추종, 이후 정상 720mm/s로 전환한다.
+  # 300mm/s는 관절 모드의 검토 속도 50°/s의 TCP 환산치(수백 mm/s)와 비슷한
+  # 수준으로, 손 움직임을 지연 없이 따라가기 위한 값이다.
+  initial_sync_duration_s: 3.0
+  initial_sync_linear_velocity: 20.0
+  max_linear_velocity: 720
+  # ./run.sh init-position과 에피소드 시작 자세 정렬에 쓰는 관절 속도(관절 모드와 동일).
+  initial_sync_joint_velocity: 3.0
+  init_position_velocity: 8.0
+
+teleop:
+  type: uf::gello_teleop
+  id: gello_xarm7_pi0
+  port: "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTATZQHL-if00-port0"
+  joint_ids: [1, 2, 3, 4, 5, 6, 7]
+  joint_signs: [1, 1, 1, 1, 1, 1, 1]
+  start_joints: [1.7008, -27.2507, 4.6363, 61.3642, 2.0963, 88.5464, 5.9063]
+  gripper_id: 8
+  # endpoint 추적 모드 설정
+  tracking_mode: endpoint
+  # 컨트롤러에 설정된 TCP offset과 반드시 같아야 한다 [x, y, z(mm), roll, pitch, yaw(°)].
+  # 기본 xArm Gripper의 표준값 z=172mm. verify가 컨트롤러 값과 비교 검사한다.
+  tcp_offset: [0.0, 0.0, 172.0, 0.0, 0.0, 0.0]
+  relative_alignment_enabled: true
+  leader_stability_duration_s: 0.5
+  leader_stability_max_delta_deg: 1.0
+  first_action_max_delta_deg: 1.0
+  # endpoint 모드 전용 안전 한계
+  first_action_max_delta_mm: 5.0
+  first_action_max_delta_rot_deg: 2.0
+  max_frame_jump_mm: 150.0
+  # 컨트롤러 FK(공장 캘리브레이션 포함)를 사용한다. 로컬 공칭 FK는 실측에서
+  # 최대 10mm 모델 오차가 있었다(2026-08-07 검증).
+  robot_ip: "192.168.0.240"
+  # GELLO 엔코더 갱신은 57600 baud에서 약 18Hz다. 30Hz 루프의 계단형 목표를
+  # EMA로 보간한다. 0.5는 부드러움과 반응 속도(지연 약 1프레임)의 절충값이다.
+  endpoint_smoothing_alpha: 0.5
+
+fps: 30
+
+start_paused: false

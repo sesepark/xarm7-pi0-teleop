@@ -1,0 +1,53 @@
+# xArm7 + GELLO 텔레옵 설정
+#
+# 이 시작 자세는 2026-07-30에 사용자가 물리적으로 안전하고, 손목 카메라에서
+# 빨간 직사각형 물체와 중앙 검은 선이 함께 잘 보인다고 확인한 현재 TCP 자세
+# (x=330, y=50, z=350, roll=180, pitch=0, yaw=0)에서 읽은 실제 관절값입니다.
+# 단위: 관절은 degree, 관절 속도는 °/s입니다.
+#
+# 중요: joint_signs의 7개 +1은 사용자가 실제 단일 축 시험으로 확인했습니다.
+# 다만 그리퍼 방향/영점까지 확인되기 전에는 전체 텔레옵을 실행하지 않습니다.
+# 실행 허용 여부는 별도의 teleop_safety_state.yaml 파일이 관리합니다. 이렇게 분리해야
+# UFACTORY의 텔레옵 명령이 이 파일을 순수한 LeRobot 설정으로 읽을 수 있습니다.
+
+robot:
+  type: uf::robot
+  id: xarm7_pi0
+  robot_dof: 7
+  control_space: joint
+  robot_ip: "192.168.0.240"
+  gripper_type: 1  # 1 = 기본 xArm Gripper
+  start_joints: [1.7008, -27.2507, 4.6363, 61.3642, 2.0963, 88.5464, 5.9063]
+  # 초기 GELLO 시험은 매우 낮은 관절 속도로 제한합니다.
+  # 텔레옵 시작 후 첫 3초에는 3°/s만 사용하고, 이후 max_joint_velocity로 전환합니다.
+  # 이 설정은 목표 관절각을 잘라내지 않습니다.
+  initial_sync_duration_s: 3.0
+  initial_sync_joint_velocity: 3.0
+  # ./run.sh init-position 전용 복귀 속도입니다. 텔레옵 시작 직후의
+  # initial_sync_joint_velocity(3°/s)와는 의도적으로 분리합니다.
+  init_position_velocity: 8.0
+  # xArm의 현재 관절 제한 180°/s 이내에서 정상 추종 응답성을 높인 120°/s입니다.
+  # 초기 3초 저속 구간은 그대로 유지합니다.
+  max_joint_velocity: 120
+
+teleop:
+  type: uf::gello_teleop
+  id: gello_xarm7_pi0
+  port: "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTATZQHL-if00-port0"
+  joint_ids: [1, 2, 3, 4, 5, 6, 7]
+  # 실제 단일 축 시험으로 J1~J7 모두 +1임을 검증했습니다.
+  joint_signs: [1, 1, 1, 1, 1, 1, 1]
+  # GELLO를 켠 순간의 현재 물리 자세를 이 xArm 안전 자세로 해석합니다.
+  start_joints: [1.7008, -27.2507, 4.6363, 61.3642, 2.0963, 88.5464, 5.9063]
+  gripper_id: 8
+  # 에피소드/텔레옵 시작 순간의 GELLO 자세를 팔로워 현재 자세에 상대 정렬합니다.
+  relative_alignment_enabled: true
+  leader_stability_duration_s: 0.5
+  leader_stability_max_delta_deg: 1.0
+  first_action_max_delta_deg: 1.0
+
+fps: 30
+
+# run.sh에서 start 확인과 3초 안전 대기를 이미 수행하므로, UFACTORY 원본의
+# 추가 Space 시작 대기는 사용하지 않습니다. 시작 후 Space는 Pause/Resume입니다.
+start_paused: false

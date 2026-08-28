@@ -1,0 +1,91 @@
+# xArm7 + GELLO + 손목 RealSense D435i 데이터 수집 설정 — endpoint(TCP) 추적 모드
+#
+# 목적: 관절 추적 대신 GELLO endpoint만 추적해(컨트롤러 mode 7 planning)
+# 시연을 기록한다. 저장되는 관측 state는 [J1..J7(rad), pose 6(mm/rad axis-angle),
+# gripper] 14차원, action은 [pose 6, gripper] 7차원이다.
+# pi0 학습용 8차원 관절 스키마는 dataset-merge 단계에서 state의 관절값으로 재구성한다.
+# 시작 자세·GELLO 매핑·카메라는 관절 모드 설정과 반드시 같아야 한다.
+
+robot:
+  type: uf::robot
+  id: xarm7_pi0
+  robot_dof: 7
+  control_space: cartesian
+  robot_ip: "192.168.0.240"
+  gripper_type: 1  # 기본 xArm Gripper
+  start_joints: [1.7008, -27.2507, 4.6363, 61.3642, 2.0963, 88.5464, 5.9063]
+  # cartesian 모드에서도 실제 관절값을 관측에 포함한다(pi0 관절 스키마 재구성용).
+  cartesian_obs_include_joints: true
+  # 저속 구간 1초 (에피소드 시작은 카운트다운·안정성·첫 action 검사로 이미 보호됨)
+  initial_sync_duration_s: 1.0
+  initial_sync_linear_velocity: 20.0
+  # 관절 모드 120°/s에 대응하도록 기존 환산 기준으로 정한 TCP 속도입니다.
+  max_linear_velocity: 720
+  initial_sync_joint_velocity: 3.0
+  # cameras는 RecordConfig가 아니라 robot(uf::robot) 아래에 있어야 합니다.
+  # 최상위로 빼면 draccus가 "The fields `cameras` are not valid for UFRecordConfig"로 거부합니다.
+  cameras:
+    # "wrist"라는 이름은 이후 pi0 학습과 추론에서도 바꾸지 않습니다.
+    wrist:
+      type: intelrealsense
+      serial_number_or_name: "348522072411"
+      width: 640
+      height: 480
+      fps: 30
+      color_mode: rgb
+      use_depth: false
+      rotation: 0
+    front:
+      type: intelrealsense
+      serial_number_or_name: "348522072232"
+      width: 640
+      height: 480
+      fps: 30
+      color_mode: rgb
+      use_depth: false
+      rotation: 0
+
+teleop:
+  type: uf::gello_teleop
+  id: gello_xarm7_pi0
+  port: "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTATZQHL-if00-port0"
+  joint_ids: [1, 2, 3, 4, 5, 6, 7]
+  joint_signs: [1, 1, 1, 1, 1, 1, 1]
+  start_joints: [1.7008, -27.2507, 4.6363, 61.3642, 2.0963, 88.5464, 5.9063]
+  gripper_id: 8
+  tracking_mode: endpoint
+  tcp_offset: [0.0, 0.0, 172.0, 0.0, 0.0, 0.0]
+  relative_alignment_enabled: true
+  leader_stability_duration_s: 0.5
+  leader_stability_max_delta_deg: 1.0
+  first_action_max_delta_deg: 1.0
+  first_action_max_delta_mm: 5.0
+  first_action_max_delta_rot_deg: 2.0
+  max_frame_jump_mm: 150.0
+  # 컨트롤러 FK(공장 캘리브레이션 포함) 사용 + 18Hz 엔코더 계단 보간(EMA).
+  robot_ip: "192.168.0.240"
+  endpoint_smoothing_alpha: 0.5
+
+dataset:
+  # 이 값은 원본 설정의 자리표시자입니다. ./run.sh record endpoint가 실행될 때마다
+  # data/YYYY-MM-DD/session_NNN 형태의 새 경로로 자동 교체됩니다.
+  root: "/home/robotics/pi0_sehwan/data/xarm7_gello_wrist_red_block_black_line_right_endpoint_v1"
+  repo_id: "pi0_sehwan/xarm7_gello_wrist_red_block_black_line_right_endpoint_v1"
+  single_task: "Pick up the red rectangular block and move it to the right side of the black line in the center."
+  fps: 30
+  episode_time_s: 20
+  reset_time_s: 20
+  num_episodes: 30
+  video: true
+  push_to_hub: false
+  num_image_writer_processes: 0
+  num_image_writer_threads_per_camera: 4
+
+# 녹화 프로그램 내부에서 Space를 누른 뒤의 최종 안전 대기입니다. (현재 2초)
+start_countdown_s: 2.0
+
+# 성공 저장/실패 폐기 판정 직후 초기 자세 복귀 속도(관절, °/s)입니다.
+return_to_start_velocity: 8.0
+
+# LeRobot 0.4.3 영상 인코더 설정. dataset: 아래에 쓰면 무시됩니다.
+video_codec: h264

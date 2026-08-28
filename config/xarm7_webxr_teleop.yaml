@@ -1,0 +1,40 @@
+# xArm7 + phone WebXR Cartesian teleoperation.
+# Start with the conservative 100mm/s limit below. Increase it only after
+# validating axes, deadman hold, and tracking stability in the real workspace.
+robot:
+  type: uf::robot
+  id: xarm7_pi0
+  robot_dof: 7
+  control_space: cartesian
+  robot_ip: "192.168.0.240"
+  gripper_type: 1
+  start_joints: [1.7008, -27.2507, 4.6363, 61.3642, 2.0963, 88.5464, 5.9063]
+  cartesian_obs_include_joints: true
+  initial_sync_duration_s: 3.0
+  initial_sync_linear_velocity: 20.0
+  max_linear_velocity: 100
+  initial_sync_joint_velocity: 3.0
+
+teleop:
+  type: uf::webxr_teleop
+  id: webxr_xarm7_pi0
+  host: "0.0.0.0"
+  port: 8443
+  tls_certfile: "/home/robotics/pi0_sehwan/runtime/webxr_tls/server.crt"
+  tls_keyfile: "/home/robotics/pi0_sehwan/runtime/webxr_tls/server.key"
+  # Leave empty to generate a new short pairing token on every launch.
+  pairing_token: ""
+  translation_scale: 0.5
+  rotation_scale: 0.5
+  stale_timeout_s: 0.25
+  max_input_frame_translation_mm: 50.0
+  max_input_frame_rotation_deg: 20.0
+  max_relative_translation_mm: 250.0
+  max_relative_rotation_deg: 90.0
+  smoothing_time_constant_s: 0.08
+  require_deadman: true
+
+fps: 30
+# The server and phone are connected first. Press Space on the robot PC only
+# after the phone shows WebXR tracking and MOVE is released.
+start_paused: true

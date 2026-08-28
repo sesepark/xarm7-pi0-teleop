@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=pi0 xArm7 제어판
+Comment=xArm7, GELLO, RealSense, pi0 시연 로컬 제어판
+Exec=/home/robotics/pi0_sehwan/scripts/launch_robot_gui.sh
+Icon=applications-engineering
+Terminal=false
+Categories=Development;Science;Robotics;
+StartupNotify=true

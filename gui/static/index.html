@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>pi0 xArm7 제어판</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <img class="snu-logo" src="/snu-logo.png" alt="서울대학교 로고" />
+        <div>
+          <p class="eyebrow">LOCAL CONTROL · xArm7 / GELLO / D435i</p>
+          <h1>pi0 시연 제어판</h1>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="close-note">창을 닫으면 현재 모드도 자동 종료됩니다.</span>
+        <div id="connection" class="pill muted">연결 확인 중</div>
+      </div>
+    </header>
+
+    <main class="dashboard">
+      <section class="controls" aria-label="로봇 제어">
+        <article class="panel panel-environment">
+          <div class="panel-title"><span class="step">1</span><h2>환경과 카메라</h2></div>
+          <div class="button-grid three">
+            <button class="secondary" data-action="doctor">환경 진단</button>
+            <button class="secondary" data-camera-start="wrist">손목 카메라 테스트</button>
+            <button class="secondary" data-camera-start="front">전면 카메라 테스트</button>
+            <button class="secondary" data-action="restart">GUI 서버 재시작</button>
+          </div>
+          <p class="hint">카메라 테스트는 아래 UI 영상으로 표시됩니다. 텔레옵 중에는 GUI가, 녹화 중에는 저장 프로그램이 한 번씩만 카메라를 연결합니다. 집중 모드는 사용자가 버튼을 눌러 선택적으로 엽니다.</p>
+        </article>
+
+        <article class="panel panel-robot">
+          <div class="panel-title"><span class="step">2</span><h2>로봇 조작</h2></div>
+          <div class="tracking-row" role="radiogroup" aria-label="GELLO 추적 모드">
+            <span class="tracking-label">추적 모드</span>
+            <label><input type="radio" name="tracking-mode" value="joint" checked /> 관절값 추적</label>
+            <label><input type="radio" name="tracking-mode" value="endpoint" /> Endpoint 추적</label>
+          </div>
+          <div class="button-grid three">
+            <button class="warning" data-mode="init">초기 자세 복귀</button>
+            <button class="primary" data-mode="teleop">텔레옵 시작</button>
+            <button class="danger" data-action="stop">현재 모드 중지</button>
+          </div>
+          <p class="hint">시작 전 작업영역을 확인합니다. 텔레옵은 초기 자세 복귀 뒤 시작됩니다.
+            추적 모드는 텔레옵과 데이터 수집에 함께 적용됩니다. Endpoint 추적은 GELLO의
+            TCP 위치만 따라가고 관절 궤적은 xArm planning이 결정합니다.</p>
+        </article>
+
+        <article class="panel panel-record">
+          <div class="panel-title"><span class="step">3</span><h2>데이터 수집</h2></div>
+          <div class="button-grid three">
+            <button class="primary" data-mode="record">데이터 수집 준비</button>
+            <button class="secondary" data-mode="record-new">새 세션 시작</button>
+            <button class="danger" data-key="esc" data-record-key disabled>전체 수집 종료</button>
+          </div>
+          <div class="record-controls">
+            <button data-key="space" data-record-key class="record-start" disabled>녹화 시작</button>
+            <button data-key="right" data-record-key class="success" disabled>성공 저장</button>
+            <button data-key="left" data-record-key class="warning" disabled>실패 폐기</button>
+          </div>
+          <div class="episode-time-row">
+            <label for="episode-time">새 세션 에피소드 시간</label>
+            <input id="episode-time" type="number" min="5" max="300" step="1" value="20" />
+            <span>초</span>
+          </div>
+        <button class="primary focus-open" data-action="focus-open">녹화 집중 모드 열기</button>
+          <div class="replay-row resume-row">
+            <select id="resume-session" aria-label="이어서 수집할 세션" disabled></select>
+            <button class="secondary" id="resume-start" disabled>선택 세션에서 수집 재개</button>
+          </div>
+          <p class="hint" id="record-hint">데이터 수집 준비 뒤 화면 버튼으로 녹화 시작·저장·폐기·종료를 선택합니다.</p>
+          <div class="replay-divider"></div>
+          <div class="replay-row">
+            <select id="replay-dataset" aria-label="재생 데이터 수집 세션" disabled></select>
+            <select id="replay-episode" aria-label="재생 성공 시연 번호" disabled></select>
+            <button class="primary" id="replay-start" disabled>선택 시연 재생 (1×)</button>
+          </div>
+          <p class="hint" id="replay-hint">성공 시연 목록을 불러오는 중입니다.</p>
+        </article>
+
+        <article class="panel panel-c31">
+          <div class="panel-title"><span class="step error-step">!</span><h2>오류 복구 (C1 · C31 · C19)</h2></div>
+          <div class="button-grid three">
+            <button class="danger" data-action="c1-start">C1 복구 시작</button>
+            <button class="secondary" data-action="c1-release" disabled>비상정지 해제 완료</button>
+            <button class="warning" data-action="c1-return" disabled>초기 자세 복귀 승인</button>
+          </div>
+          <p class="hint" id="c1-hint">C1(비상정지): 버튼을 물리적으로 해제한 뒤 단계별로 승인합니다.</p>
+          <div class="replay-divider"></div>
+          <div class="button-grid three">
+            <button class="danger" data-action="c31-start">C31 복구 시작</button>
+            <button class="secondary" data-action="c31-clear" disabled>장애물 제거 완료</button>
+            <button class="warning" data-action="c31-return" disabled>초기 자세 복귀 승인</button>
+          </div>
+          <p class="hint" id="c31-hint">C31(충돌/과전류): 먼저 C31 복구 시작을 누르세요.</p>
+          <div class="replay-divider"></div>
+          <div class="button-grid two">
+            <button class="danger" data-action="c19-start">C19 복구 시작</button>
+            <button class="secondary" data-action="c19-check" disabled>케이블 점검 완료</button>
+          </div>
+          <p class="hint" id="c19-hint">C19(그리퍼/끝단 통신): 케이블 점검 후 통신만 복구하며 팔·그리퍼는 움직이지 않습니다.</p>
+        </article>
+      </section>
+
+      <aside class="monitor" aria-label="상태와 카메라 및 로그">
+        <section class="camera-panel">
+          <div class="camera-panel-head">
+            <div><h2>실시간 카메라</h2><p>텔레옵 중 촬영 구도와 가림 상태를 확인합니다.</p></div>
+          </div>
+          <div class="camera-grid">
+            <article class="camera-card" data-camera-card="wrist">
+              <div class="camera-meta"><strong>손목 카메라</strong><span id="camera-status-wrist" class="camera-state muted">꺼짐</span></div>
+              <div class="camera-viewport"><img id="camera-image-wrist" alt="손목 카메라 실시간 화면" /><span id="camera-empty-wrist">테스트 또는 텔레옵을 시작하세요</span></div>
+              <div class="camera-card-actions"><button class="primary compact" data-camera-enlarge="wrist">크게 보기</button><button class="secondary compact camera-stop" data-camera-stop="wrist">프리뷰 중지</button></div>
+            </article>
+            <article class="camera-card" data-camera-card="front">
+              <div class="camera-meta"><strong>전면 카메라</strong><span id="camera-status-front" class="camera-state muted">꺼짐</span></div>
+              <div class="camera-viewport"><img id="camera-image-front" alt="전면 카메라 실시간 화면" /><span id="camera-empty-front">테스트 또는 텔레옵을 시작하세요</span></div>
+              <div class="camera-card-actions"><button class="primary compact" data-camera-enlarge="front">크게 보기</button><button class="secondary compact camera-stop" data-camera-stop="front">프리뷰 중지</button></div>
+            </article>
+          </div>
+        </section>
+        <section class="status-card">
+          <div class="status-head"><span>현재 상태</span><strong id="mode">대기</strong></div>
+          <p id="phase">상태를 불러오는 중입니다.</p>
+          <div class="process-row"><span>프로세스</span><span id="process">없음</span><small id="pid">PID 없음</small></div>
+        </section>
+
+        <section class="error-card" id="error-card">
+          <span>오류 안내</span>
+          <strong id="error-title">감지된 오류 없음</strong>
+          <p id="error-detail">환경 진단으로 xArm, GELLO, 카메라 상태를 확인하세요.</p>
+        </section>
+
+        <section class="terminal-panel">
+          <div class="terminal-heading">
+            <div><h2>실행 로그</h2><p>명령 출력과 진행 상태가 표시됩니다.</p></div>
+            <button id="clear-log" class="secondary compact">화면 지우기</button>
+          </div>
+          <pre id="log" tabindex="0" aria-label="실행 로그"></pre>
+        </section>
+      </aside>
+    </main>
+
+    <section id="focus-mode" class="focus-mode" aria-hidden="true">
+      <header class="focus-header">
+          <div><p class="eyebrow">RECORDING VIEW</p><h2>녹화 집중 모드</h2></div>
+        <div class="focus-header-actions">
+          <span id="focus-mode-status" class="pill muted">대기</span>
+          <button class="secondary" data-action="focus-fullscreen">화면 전체화면</button>
+          <button class="secondary" data-action="focus-close">집중 모드 닫기</button>
+        </div>
+      </header>
+      <main class="focus-content">
+        <section class="focus-cameras">
+          <article class="focus-camera">
+            <div class="focus-camera-title"><strong>손목 카메라</strong><span id="focus-camera-status-wrist">꺼짐</span></div>
+            <div class="focus-viewport"><img id="focus-image-wrist" alt="집중 모드 손목 카메라" /><span id="focus-empty-wrist">카메라 대기 중</span></div>
+          </article>
+          <article class="focus-camera">
+            <div class="focus-camera-title"><strong>전면 카메라</strong><span id="focus-camera-status-front">꺼짐</span></div>
+            <div class="focus-viewport"><img id="focus-image-front" alt="집중 모드 전면 카메라" /><span id="focus-empty-front">카메라 대기 중</span></div>
+          </article>
+        </section>
+        <aside class="focus-sidebar">
+          <section class="focus-setup">
+            <span class="focus-section-label">작업 설정</span>
+            <div class="focus-tracking" role="radiogroup" aria-label="집중 모드 추적 모드">
+              <label><input type="radio" name="focus-tracking-mode" value="joint" checked /> 관절값 추적</label>
+              <label><input type="radio" name="focus-tracking-mode" value="endpoint" /> Endpoint 추적</label>
+            </div>
+            <label class="focus-time-input">에피소드 시간 <input id="focus-episode-time" type="number" min="5" max="300" step="1" value="20" /> 초</label>
+            <div class="focus-setup-actions">
+              <button class="warning" data-focus-mode="init">초기 자세 복귀</button>
+              <button class="primary" data-focus-mode="record">데이터 수집 준비</button>
+            </div>
+          </section>
+          <section class="focus-record-status">
+            <span>에피소드 상태</span><strong id="focus-record-phase">대기</strong>
+            <div class="focus-timer"><strong id="focus-timer">--:--</strong><span id="focus-time-limit">설정 시간 --초</span></div>
+            <div class="focus-progress"><i id="focus-progress-bar"></i></div>
+            <div class="focus-counts">
+              <div><span>성공 저장</span><strong id="focus-saved">0</strong></div>
+              <div><span>실패 폐기</span><strong id="focus-discarded">0</strong></div>
+            </div>
+          </section>
+          <section class="focus-actions">
+            <button class="record-start" data-key="space" data-record-key disabled>녹화 시작 <kbd>Space</kbd></button>
+            <button class="success" data-key="right" data-record-key disabled>성공 저장 <kbd>→</kbd></button>
+            <button class="warning" data-key="left" data-record-key disabled>실패 폐기 <kbd>←</kbd></button>
+            <button class="danger" data-key="esc" data-record-key disabled>전체 수집 종료 <kbd>ESC</kbd></button>
+            <button id="focus-stop" class="danger" data-action="focus-stop">현재 모드 중지 <kbd>Space</kbd></button>
+          </section>
+          <p class="focus-help">집중 모드가 열려 있을 때만 표시된 단축키가 동작합니다. 입력 칸을 편집할 때는 단축키가 비활성화됩니다.</p>
+        </aside>
+      </main>
+    </section>
+
+    <section id="camera-enlarge" class="camera-enlarge" aria-hidden="true">
+      <header>
+        <div><p class="eyebrow">CAMERA VIEW</p><h2 id="camera-enlarge-title">카메라 크게 보기</h2></div>
+        <div><button class="secondary" data-action="camera-enlarge-fullscreen">화면 전체화면</button><button class="secondary" data-action="camera-enlarge-close">닫기</button></div>
+      </header>
+      <main><img id="camera-enlarge-image" alt="확대한 실시간 카메라" /><span id="camera-enlarge-empty">카메라를 먼저 켜주세요.</span></main>
+    </section>
+
+    <dialog id="confirm-dialog">
+      <form method="dialog">
+        <h2 id="dialog-title">실제 로봇 동작 확인</h2>
+        <p id="dialog-message"></p>
+        <label class="check"><input id="safety-check" type="checkbox" /> 작업영역에 사람·물체·케이블이 없음을 확인했습니다.</label>
+        <div class="dialog-actions">
+          <button value="cancel" class="secondary">취소</button>
+          <button id="dialog-confirm" value="confirm" class="danger" disabled>3초 안전 절차 시작</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="toast" role="status"></div>
+    <script src="/app.js"></script>
+  </body>
+</html>

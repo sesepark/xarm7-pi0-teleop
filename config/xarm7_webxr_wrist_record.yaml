@@ -1,0 +1,68 @@
+# WebXR variant of the existing xArm7 endpoint recording setup.
+robot:
+  type: uf::robot
+  id: xarm7_pi0
+  robot_dof: 7
+  control_space: cartesian
+  robot_ip: "192.168.0.240"
+  gripper_type: 1
+  start_joints: [1.7008, -27.2507, 4.6363, 61.3642, 2.0963, 88.5464, 5.9063]
+  cartesian_obs_include_joints: true
+  initial_sync_duration_s: 1.0
+  initial_sync_linear_velocity: 20.0
+  max_linear_velocity: 100
+  initial_sync_joint_velocity: 3.0
+  cameras:
+    wrist:
+      type: intelrealsense
+      serial_number_or_name: "348522072411"
+      width: 640
+      height: 480
+      fps: 30
+      color_mode: rgb
+      use_depth: false
+      rotation: 0
+    front:
+      type: intelrealsense
+      serial_number_or_name: "348522072232"
+      width: 640
+      height: 480
+      fps: 30
+      color_mode: rgb
+      use_depth: false
+      rotation: 0
+
+teleop:
+  type: uf::webxr_teleop
+  id: webxr_xarm7_pi0
+  host: "0.0.0.0"
+  port: 8443
+  tls_certfile: "/home/robotics/pi0_sehwan/runtime/webxr_tls/server.crt"
+  tls_keyfile: "/home/robotics/pi0_sehwan/runtime/webxr_tls/server.key"
+  pairing_token: ""
+  translation_scale: 0.5
+  rotation_scale: 0.5
+  stale_timeout_s: 0.25
+  max_input_frame_translation_mm: 50.0
+  max_input_frame_rotation_deg: 20.0
+  max_relative_translation_mm: 250.0
+  max_relative_rotation_deg: 90.0
+  smoothing_time_constant_s: 0.08
+  require_deadman: true
+
+dataset:
+  root: "/home/robotics/pi0_sehwan/data/xarm7_webxr_wrist_red_block_black_line_right_v1"
+  repo_id: "pi0_sehwan/xarm7_webxr_wrist_red_block_black_line_right_v1"
+  single_task: "Pick up the red rectangular block and move it to the right side of the black line in the center."
+  fps: 30
+  episode_time_s: 20
+  reset_time_s: 20
+  num_episodes: 30
+  video: true
+  push_to_hub: false
+  num_image_writer_processes: 0
+  num_image_writer_threads_per_camera: 4
+
+start_countdown_s: 2.0
+return_to_start_velocity: 8.0
+video_codec: h264

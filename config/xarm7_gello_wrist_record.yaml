@@ -1,0 +1,91 @@
+# xArm7 + GELLO + 손목 RealSense D435i 데이터 수집 설정
+#
+# 목적: 빨간색 직사각형 물체를 집어 중앙 검은 선의 오른쪽으로 옮기는 시연을 기록한다.
+# 이 파일의 시작 자세·GELLO 매핑은 텔레옵 설정과 반드시 같아야 한다.
+
+robot:
+  type: uf::robot
+  id: xarm7_pi0
+  robot_dof: 7
+  control_space: joint
+  robot_ip: "192.168.0.240"
+  gripper_type: 1  # 기본 xArm Gripper
+  # 사용자가 안전하고 카메라 시야가 좋다고 확인한 자세:
+  # TCP = x=330, y=50, z=350, roll=180, pitch=0, yaw=0
+  start_joints: [1.7008, -27.2507, 4.6363, 61.3642, 2.0963, 88.5464, 5.9063]
+  # 녹화 각 에피소드가 시작한 뒤 첫 1초 동안의 저속 추종 설정입니다.
+  # (에피소드 시작은 카운트다운·리더 안정성·첫 action 검사로 이미 보호되므로
+  # 저속 구간은 1초로 짧게 둔다. 2026-08-07 대기시간 단축.)
+  initial_sync_duration_s: 1.0
+  initial_sync_joint_velocity: 3.0
+  # xArm 관절 제한 180°/s 이내의 120°/s 정상 추종 속도입니다.
+  max_joint_velocity: 120
+  # cameras는 RecordConfig가 아니라 robot(uf::robot) 아래에 있어야 합니다.
+  # 최상위로 빼면 draccus가 "The fields `cameras` are not valid for UFRecordConfig"로 거부합니다.
+  cameras:
+    # "wrist"라는 이름은 이후 pi0 학습과 추론에서도 바꾸지 않습니다.
+    wrist:
+      type: intelrealsense
+      serial_number_or_name: "348522072411"
+      width: 640
+      height: 480
+      fps: 30
+      color_mode: rgb
+      use_depth: false
+      rotation: 0
+    # 작업 전체와 물체 가림 여부를 확인하는 고정 전면 카메라입니다.
+    front:
+      type: intelrealsense
+      serial_number_or_name: "348522072232"
+      width: 640
+      height: 480
+      fps: 30
+      color_mode: rgb
+      use_depth: false
+      rotation: 0
+
+teleop:
+  type: uf::gello_teleop
+  id: gello_xarm7_pi0
+  port: "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTATZQHL-if00-port0"
+  joint_ids: [1, 2, 3, 4, 5, 6, 7]
+  joint_signs: [1, 1, 1, 1, 1, 1, 1]
+  start_joints: [1.7008, -27.2507, 4.6363, 61.3642, 2.0963, 88.5464, 5.9063]
+  gripper_id: 8
+  # 각 녹화 시작 순간에 리더 변화량의 영점을 팔로워 현재 자세에 맞춥니다.
+  relative_alignment_enabled: true
+  leader_stability_duration_s: 0.5
+  leader_stability_max_delta_deg: 1.0
+  first_action_max_delta_deg: 1.0
+
+dataset:
+  # 이 값은 원본 설정의 자리표시자입니다. ./run.sh record가 실행될 때마다
+  # data/YYYY-MM-DD/session_NNN 형태의 새 경로로 자동 교체됩니다.
+  root: "/home/robotics/pi0_sehwan/data/xarm7_gello_wrist_red_block_black_line_right_v1"
+  repo_id: "pi0_sehwan/xarm7_gello_wrist_red_block_black_line_right_v1"
+  single_task: "Pick up the red rectangular block and move it to the right side of the black line in the center."
+  fps: 30
+  # 20초 안에 성공/실패 판정을 내립니다. 시간이 끝나도 자동 저장하지 않으며,
+  # 화면의 →(성공 저장) 또는 ←(실패 폐기)를 반드시 선택해야 합니다.
+  episode_time_s: 20
+  reset_time_s: 20
+  # 실제 데이터 수집 단계: 이번 새 세션에서 성공 시연 30개를 저장합니다.
+  # 기존 session_004의 정상 시연 5개와 합쳐, 임시 pi0 시험용 35개가 됩니다.
+  # 실패 시도(←)는 이 개수에 포함되지 않습니다.
+  num_episodes: 30
+  video: true
+  push_to_hub: false
+  num_image_writer_processes: 0
+  num_image_writer_threads_per_camera: 4
+
+# 녹화 프로그램 내부에서 Space를 누른 뒤의 최종 안전 대기입니다.
+# 이 시간 동안 GELLO 입력은 xArm에 전달되지 않습니다. (현재 2초)
+start_countdown_s: 2.0
+
+# 성공 저장 또는 실패 폐기 판정 직후 다음 시연 준비를 위해 초기 자세로 돌아갈 때 쓰는 속도입니다.
+# 텔레옵 시작 직후의 3°/s 저속 추종과는 별개입니다.
+return_to_start_velocity: 8.0
+
+# LeRobot 0.4.3의 실제 영상 인코더에 전달하는 값입니다.
+# dataset: 아래에 쓰면 무시되므로 반드시 이 최상위 항목으로 관리합니다.
+video_codec: h264

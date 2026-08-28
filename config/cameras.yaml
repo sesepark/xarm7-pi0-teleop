@@ -1,0 +1,23 @@
+# UI 프리뷰와 개별 카메라 검사에 사용하는 두 대의 RealSense 설정입니다.
+# 이 이름(wrist/front)은 녹화 데이터셋의 observation.images.* 이름과 같아야 합니다.
+cameras:
+  wrist:
+    label: "손목 카메라"
+    type: intelrealsense
+    serial_number: "348522072411"
+    width: 640
+    height: 480
+    fps: 30
+    color_mode: rgb
+    use_depth: false
+    rotation: 0
+  front:
+    label: "전면 카메라"
+    type: intelrealsense
+    serial_number: "348522072232"
+    width: 640
+    height: 480
+    fps: 30
+    color_mode: rgb
+    use_depth: false
+    rotation: 0

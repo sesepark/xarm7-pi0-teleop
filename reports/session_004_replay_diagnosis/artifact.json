@@ -1,0 +1,195 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "7월 30일 Session 004 성공 시연 1 재생 끊김 진단",
+    "description": "저장 주기, 목표/실제 관절 궤적, 재생 속도 제한과 제어 방식을 대조한 기술 진단",
+    "generatedAt": "2026-08-12T17:20:00+09:00",
+    "charts": [
+      {
+        "id": "speed_quantiles",
+        "title": "목표 action과 실제 관측 궤적의 프레임 간 요구 속도",
+        "subtitle": "GUI 표시 성공 시연 1, 30Hz 기준 관절 중 최대 속도",
+        "showDescription": true,
+        "type": "bar",
+        "dataset": "speed_summary",
+        "sourceId": "session_parquet",
+        "encodings": {
+          "x": {"field": "stat", "type": "ordinal", "label": "통계"},
+          "y": {"field": "speed_deg_s", "type": "quantitative", "label": "속도", "unit": "°/s"},
+          "color": {"field": "trajectory", "type": "nominal", "label": "궤적"},
+          "tooltip": [
+            {"field": "trajectory", "type": "nominal", "label": "궤적"},
+            {"field": "speed_deg_s", "type": "quantitative", "label": "속도", "unit": "°/s"}
+          ]
+        },
+        "valueFormat": "number",
+        "unit": "°/s",
+        "layout": "full"
+      },
+      {
+        "id": "lag_error",
+        "title": "목표 action 대비 실제 xArm 관측의 시간 지연",
+        "subtitle": "관측 궤적을 뒤로 이동해 비교했을 때의 전체 관절 평균 절대 오차",
+        "showDescription": true,
+        "type": "line",
+        "dataset": "lag_summary",
+        "sourceId": "session_parquet",
+        "encodings": {
+          "x": {"field": "lag_ms", "type": "quantitative", "label": "관측 지연", "unit": "ms"},
+          "y": {"field": "mae_deg", "type": "quantitative", "label": "평균 절대 오차", "unit": "°"},
+          "tooltip": [
+            {"field": "lag_frames", "type": "quantitative", "label": "프레임"},
+            {"field": "mae_deg", "type": "quantitative", "label": "평균 절대 오차", "unit": "°"}
+          ]
+        },
+        "valueFormat": "number",
+        "unit": "°",
+        "layout": "full"
+      }
+    ],
+    "tables": [
+      {
+        "id": "cause_table",
+        "title": "원인별 판단",
+        "subtitle": "Session 004 성공 시연 1에 대한 증거와 예상 영향",
+        "dataset": "cause_assessment",
+        "sourceId": "analysis_code",
+        "defaultSort": {"field": "cause", "direction": "asc"},
+        "density": "spacious",
+        "layout": "full",
+        "columns": [
+          {"field": "cause", "label": "후보 원인", "type": "text"},
+          {"field": "assessment", "label": "판단", "type": "text"},
+          {"field": "evidence", "label": "근거", "type": "text"}
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "session_parquet",
+        "label": "Session 004 LeRobot 관절 데이터",
+        "path": "data/2026-07-30/session_004/data/chunk-000/file-000.parquet",
+        "query": {
+          "engine": "DuckDB",
+          "language": "sql",
+          "sql": "SELECT action, observation.state, episode_index, frame_index, timestamp FROM read_parquet('data/2026-07-30/session_004/data/chunk-000/file-000.parquet') WHERE episode_index = 0 ORDER BY frame_index",
+          "description": "GUI 표시 성공 시연 1의 목표 action과 실제 관측 관절값을 프레임 순서로 읽습니다.",
+          "tables_used": ["data/2026-07-30/session_004/data/chunk-000/file-000.parquet"],
+          "filters": ["episode_index = 0", "J1-J7 관절 차원"]
+        }
+      },
+      {
+        "id": "session_config",
+        "label": "Session 004 녹화 설정",
+        "path": "runtime/record_sessions/2026-07-30/session_004.yaml"
+      },
+      {
+        "id": "replay_code",
+        "label": "현재 저장 시연 재생 코드",
+        "path": "scripts/replay_episode.py"
+      },
+      {
+        "id": "dataset_writer",
+        "label": "LeRobot 데이터셋 frame timestamp 생성 코드",
+        "path": "miniconda3/envs/uf_lerobot/lib/python3.10/site-packages/lerobot/datasets/lerobot_dataset.py"
+      },
+      {
+        "id": "analysis_code",
+        "label": "본 진단의 재현 계산",
+        "query": {
+          "engine": "Python / PyArrow / NumPy",
+          "language": "python",
+          "sql": "SELECT action, observation.state, episode_index, frame_index, timestamp FROM read_parquet('data/2026-07-30/session_004/data/chunk-000/file-000.parquet') WHERE episode_index = 0 ORDER BY frame_index",
+          "description": "episode_index=0의 action과 observation.state를 degree로 변환한 뒤 30Hz 차분 속도, 가속도, 목표-관측 지연 오차를 계산했습니다.",
+          "tables_used": ["data/2026-07-30/session_004/data/chunk-000/file-000.parquet"],
+          "filters": ["episode_index = 0 (GUI 표시 성공 시연 1)", "joint dimensions J1-J7"],
+          "metric_definitions": [
+            "프레임 요구 속도 = abs(q[t+1]-q[t]) × 30Hz",
+            "지연 MAE = mean(abs(action[t]-observation[t+lag])) over all frames and J1-J7"
+          ]
+        }
+      }
+    ],
+    "blocks": [
+      {"id": "title", "type": "markdown", "body": "# 7월 30일 Session 004 성공 시연 1 재생 끊김 진단"},
+      {
+        "id": "technical_summary",
+        "type": "markdown",
+        "body": "## 기술 요약\n\n**주원인은 30Hz 저장 자체가 아니라, 재생기가 녹화 당시의 실제 로봇 관절 궤적 대신 더 거칠고 앞서가는 GELLO 목표 action을 재생하는 구조입니다.** 데이터는 596프레임/19.83초로 정상적인 30Hz 길이이며 영상도 30fps입니다. 그러나 action은 실제 관측보다 약 6프레임(약 0.20초) 앞서고 순간 속도·가속도가 큽니다.\n\n**120°/s 상향은 이 시연의 일부 속도 병목은 제거하지만 근본 해결책은 아닙니다.** 기존 50°/s에서는 595개 프레임 전이 중 9개가 제한을 넘었지만, 이 시연의 action 최대 요구 속도는 76.1°/s라 120°/s에서는 모두 통과합니다. 대신 목표 궤적의 급격한 변화가 더 충실히 전달되어 툭툭거림이 남거나 더 선명해질 수 있습니다."
+      },
+      {
+        "id": "finding_speed",
+        "type": "markdown",
+        "body": "## 실제 로봇은 거친 목표를 이미 부드럽게 걸러서 움직였습니다\n\n녹화 당시 설정은 최대 30°/s였고, 저장된 실제 관측 궤적의 프레임 간 최대 속도는 39.4°/s, 95백분위는 29.25°/s였습니다. 반면 재생기가 사용하는 action은 최대 76.1°/s, 95백분위 39.28°/s이며 가속도와 저크도 관측 궤적보다 훨씬 큽니다. 따라서 원래 시연의 물리적 움직임을 재현하려면 `observation.state`의 J1-J7을 재생하는 편이 데이터 의미에 더 맞습니다.",
+        "sourceId": "session_parquet"
+      },
+      {"id": "speed_chart_block", "type": "chart", "chartId": "speed_quantiles"},
+      {
+        "id": "finding_lag",
+        "type": "markdown",
+        "body": "## 목표와 실제 움직임 사이에는 약 0.20초의 추종 지연이 있습니다\n\n같은 시점의 action과 관측값을 비교하면 평균 절대 오차가 0.603°이지만, 관측값을 6프레임 뒤로 맞추면 0.142°까지 줄어듭니다. 녹화 당시 xArm controller가 목표를 즉시 점프하지 않고 온라인 계획과 속도 제한을 거쳐 추종했다는 강한 증거입니다. 현재 재생은 이 앞선 목표를 다시 30Hz로 보내므로 원래 관측된 부드러운 궤적과 동일하지 않습니다.",
+        "sourceId": "session_parquet"
+      },
+      {"id": "lag_chart_block", "type": "chart", "chartId": "lag_error"},
+      {
+        "id": "scope_method",
+        "type": "markdown",
+        "body": "## 범위와 계산 방법\n\nGUI의 ‘성공 시연 1’은 내부 `episode_index=0`입니다. 관절 7개의 `action`과 `observation.state`를 radian에서 degree로 변환하고, 연속 프레임 차이에 30을 곱해 요구 속도를 계산했습니다. timestamp는 저장 라이브러리가 별도 실시간 timestamp를 받지 않으면 `frame_index / fps`로 생성하므로, 정확한 33.33ms 간격만으로 수집 루프 jitter가 없었다고 단정할 수는 없습니다. 다만 596프레임이 20초에 가깝고 영상도 30fps인 점에서 낮은 저장 Hz가 대표 원인이라는 증거는 없습니다."
+      },
+      {"id": "cause_table_block", "type": "table", "tableId": "cause_table"},
+      {
+        "id": "limitations",
+        "type": "markdown",
+        "body": "## 한계와 불확실성\n\n이 분석은 저장 데이터와 현재 재생 코드에 대한 오프라인 진단입니다. 실제 재생 호출의 wall-clock 지연, 네트워크 왕복, controller 내부 buffer 상태는 현재 코드가 기록하지 않아 직접 측정할 수 없습니다. 또한 timestamp가 frame index 기반이므로 녹화 당시 순간적인 loop overrun 여부도 사후 확인할 수 없습니다. 따라서 다음 재생 시험부터 명령 호출 시간과 실제 관절 feedback을 monotonic clock으로 함께 기록해야 잔여 통신 jitter를 분리할 수 있습니다."
+      },
+      {
+        "id": "recommendations",
+        "type": "markdown",
+        "body": "## 권장 수정 순서\n\n1. **joint 세션 재생은 `action` 대신 `observation.state[:7]`을 사용합니다.** 원래 xArm이 실제로 지난 궤적을 재현하므로 가장 직접적인 개선입니다.\n2. **재생 속도 상한은 120°/s를 유지하되 해결책으로 간주하지 않습니다.** 이 시연의 76.1°/s 요구는 충분히 수용하지만, 궤적 거칠기는 별도 문제입니다.\n3. **30Hz를 60~100Hz로 단순 업샘플링하기 전에 보간을 적용합니다.** 30Hz 관측 궤적에 cubic/PCHIP 또는 속도 연속 보간을 적용해 controller에 더 촘촘히 보내는 A/B 시험이 적절합니다.\n4. **재생 telemetry를 추가합니다.** 각 프레임 deadline 지연, SDK 호출 시간, 실제 joint feedback, 목표-실제 오차를 기록해 통신/CPU jitter를 확인합니다."
+      },
+      {
+        "id": "further_questions",
+        "type": "markdown",
+        "body": "## 추가 확인 질문\n\n- 끊김이 약 11~16초의 큰 이동 구간에 집중되는지 확인하면 action 급변 원인과 일치하는지 검증할 수 있습니다.\n- 실제 관측 궤적 재생 후에도 끊기면 그때는 30Hz command cadence와 mode 6 controller의 보간 특성을 분리해 시험해야 합니다."
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-08-12T17:20:00+09:00",
+    "status": "ready",
+    "datasets": {
+      "speed_summary": [
+        {"stat": "P50", "trajectory": "GELLO action", "speed_deg_s": 5.27},
+        {"stat": "P50", "trajectory": "실제 관측", "speed_deg_s": 4.82},
+        {"stat": "P95", "trajectory": "GELLO action", "speed_deg_s": 39.28},
+        {"stat": "P95", "trajectory": "실제 관측", "speed_deg_s": 29.25},
+        {"stat": "P99", "trajectory": "GELLO action", "speed_deg_s": 52.60},
+        {"stat": "P99", "trajectory": "실제 관측", "speed_deg_s": 31.64},
+        {"stat": "최대", "trajectory": "GELLO action", "speed_deg_s": 76.09},
+        {"stat": "최대", "trajectory": "실제 관측", "speed_deg_s": 39.36}
+      ],
+      "lag_summary": [
+        {"lag_frames": 0, "lag_ms": 0, "mae_deg": 0.603},
+        {"lag_frames": 1, "lag_ms": 33, "mae_deg": 0.509},
+        {"lag_frames": 2, "lag_ms": 67, "mae_deg": 0.414},
+        {"lag_frames": 3, "lag_ms": 100, "mae_deg": 0.318},
+        {"lag_frames": 4, "lag_ms": 133, "mae_deg": 0.224},
+        {"lag_frames": 5, "lag_ms": 167, "mae_deg": 0.148},
+        {"lag_frames": 6, "lag_ms": 200, "mae_deg": 0.142},
+        {"lag_frames": 7, "lag_ms": 233, "mae_deg": 0.180},
+        {"lag_frames": 8, "lag_ms": 267, "mae_deg": 0.236},
+        {"lag_frames": 9, "lag_ms": 300, "mae_deg": 0.307},
+        {"lag_frames": 10, "lag_ms": 333, "mae_deg": 0.392}
+      ],
+      "cause_assessment": [
+        {"priority": 1, "cause": "action을 실제 궤적으로 오인해 재생", "assessment": "주원인", "evidence": "action 최대 76.1°/s·큰 저크, 관측 최대 39.4°/s·약 6프레임 지연"},
+        {"priority": 2, "cause": "기존 50°/s 재생 제한", "assessment": "부분 원인", "evidence": "595개 전이 중 9개가 50°/s 초과; 120°/s 초과는 0개"},
+        {"priority": 3, "cause": "30Hz 저장", "assessment": "단독 주원인 아님", "evidence": "596프레임/19.83초, 영상 30fps, 실제 관측 궤적은 30Hz에서도 상대적으로 매끄러움"},
+        {"priority": 4, "cause": "재생 loop/네트워크 jitter", "assessment": "미측정 가능성", "evidence": "현재 재생 코드가 frame deadline·SDK 호출 시간·feedback timestamp를 기록하지 않음"}
+      ]
+    }
+  }
+}
