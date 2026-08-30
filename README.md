@@ -73,7 +73,7 @@ fork에 분리해 두었습니다.
 - upstream: [xArm-Developer/lerobot_robot_ufactory](https://github.com/xArm-Developer/lerobot_robot_ufactory)
 - 정책 학습: [Physical-Intelligence/openpi](https://github.com/Physical-Intelligence/openpi)
 
-## 재현할 때 주의
+## 한계와 주의
 
 이 저장소는 특정 실험 장비에 맞춰 운용하던 워크스페이스를 그대로 정리한 것이라, 아래 값이
 하드코딩되어 있습니다. 다른 환경에서 쓰려면 먼저 바꿔야 합니다.
