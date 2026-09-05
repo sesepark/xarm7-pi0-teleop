@@ -111,7 +111,8 @@ reports/            회차 재생 진단 리포트(HTML + artifact.json)
 fork에 분리해 두었음.
 
 - **[sesepark/lerobot_robot_ufactory `xarm7-gello-webxr`](https://github.com/sesepark/lerobot_robot_ufactory/tree/xarm7-gello-webxr)**
-  — upstream `e492233` 대비 16개 파일 / 1,893줄 추가. GELLO endpoint 추적 모드, xArm7 로컬 순기구학,
+  — upstream `e492233` 대비 코드 14개 파일 / +1,811줄(문서를 더하면 16파일 / +1,893줄).
+  GELLO endpoint 추적 모드, xArm7 로컬 순기구학,
   WebXR 휴대폰 텔레옵 모듈, 관련 테스트.
 - upstream: [xArm-Developer/lerobot_robot_ufactory](https://github.com/xArm-Developer/lerobot_robot_ufactory)
 - 정책 학습: [Physical-Intelligence/openpi](https://github.com/Physical-Intelligence/openpi)
